@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Capturar Círculos</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* Fondo celeste */
+            font-family: Arial, sans-serif;
+        }
+
+        #contenedor {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            width: 15%;
+            height: 50px;
+            background-color: transparent;
+            border: 5px solid #FF0000; /* Contenedor rojo */
+            border-top: none; /* Eliminar el lado superior */
+            transform: translateX(-50%);
+        }
+
+        .circulo {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #000000; /* Círculos negros */
+            border-radius: 50%;
+        }
+
+        #puntuacion {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: #000000; /* Puntuación en negro */
+        }
+
+        #controles {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .flecha {
+            display: inline-block;
+            padding: 20px;
+            margin: 0 10px;
+            background-color: #FFFFFF; /* Fondo blanco para las flechas */
+            color: #000000; /* Flechas negras */
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            user-select: none;
+        }
+
+        #barra-movimiento {
+            width: 80%;
+            height: 10px;
+            background-color: #FFFFFF; /* Barra de movimiento blanca */
+            margin: 10px auto;
+            position: relative;
+            cursor: pointer;
+        }
+
+        #cursor {
+            width: 20px;
+            height: 20px;
+            background-color: #000000; /* Cursor negro */
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+        }
+
+        #pantalla-inicio, #pantalla-final {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #87CEEB; /* Fondo celeste */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #pantalla-inicio button, #pantalla-final button {
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: #000000; /* Botón negro */
+            color: #FFFFFF; /* Texto blanco */
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+
+        #mensaje-final {
+            font-size: 36px;
+            color: #000000; /* Texto negro */
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="contenedor" style="display: none;"></div>
+<div id="puntuacion" style="display: none;">Puntos: 0</div>
+<div id="controles" style="display: none;">
+    <div id="flechaIzquierda" class="flecha">&larr;</div>
+    <div id="flechaDerecha" class="flecha">&rarr;</div>
+</div>
+<div id="barra-movimiento" style="display: none;">
+    <div id="cursor"></div>
+</div>
+
+<div id="pantalla-inicio">
+    <button id="startButton">START</button>
+</div>
+
+<div id="pantalla-final" style="display: none;">
+    <div id="mensaje-final"></div>
+    <button id="restartButton">Reiniciar</button>
+</div>
+
+<script>
+    let contenedor = document.getElementById('contenedor');
+    let puntuacion = document.getElementById('puntuacion');
+    let cursor = document.getElementById('cursor');
+    let puntos = 0;
+    let caidaCirculos = 100;
+    let caidaIntervalo = 200; // milisegundos entre cada círculo (5 por segundo)
+    let velocidadMovimiento = 10; // Velocidad de movimiento del contenedor
+
+    document.getElementById('startButton').addEventListener('click', iniciarJuego);
+    document.getElementById('restartButton').addEventListener('click', reiniciarJuego);
+
+    function iniciarJuego() {
+        document.getElementById('pantalla-inicio').style.display = 'none';
+        contenedor.style.display = 'block';
+        puntuacion.style.display = 'block';
+        document.getElementById('controles').style.display = 'block';
+        document.getElementById('barra-movimiento').style.display = 'block';
+
+        let interval = setInterval(crearCirculo, caidaIntervalo);
+
+        setTimeout(function() {
+            clearInterval(interval);
+            mostrarPantallaFinal();
+        }, caidaCirculos * caidaIntervalo);
+    }
+
+    function mostrarPantallaFinal() {
+        contenedor.style.display = 'none';
+        puntuacion.style.display = 'none';
+        document.getElementById('controles').style.display = 'none';
+        document.getElementById('barra-movimiento').style.display = 'none';
+
+        let mensaje;
+        if (puntos === 41) {
+            mensaje = "DESBLOQUEASTE SECRET SCORE";
+        } else if (puntos <= 10) {
+            mensaje = "ERES PESIMO";
+        } else if (puntos <= 40) {
+            mensaje = "ERES MEDIO MALO";
+        } else if (puntos <= 65) {
+            mensaje = "ERES BUENO";
+        } else if (puntos <= 99) {
+            mensaje = "ERES MUY BUENO";
+        } else if (puntos === 100) {
+            mensaje = "ERES JESUCRISTO";
+        }
+
+        document.getElementById('mensaje-final').textContent = `Puntos: ${puntos} - ${mensaje}`;
+        document.getElementById('pantalla-final').style.display = 'flex';
+    }
+
+    function reiniciarJuego() {
+        puntos = 0;
+        caidaCirculos = 100;
+        puntuacion.textContent = 'Puntos: 0';
+        document.getElementById('pantalla-final').style.display = 'none';
+        iniciarJuego();
+    }
+
+    function moverContenedor(direccion) {
+        let contenedorPos = contenedor.offsetLeft;
+        let contenedorWidth = contenedor.offsetWidth;
+
+        if (direccion === 'izquierda' && contenedorPos > 0) {
+            contenedor.style.left = contenedorPos - velocidadMovimiento + 'px';
+        }
+
+        if (direccion === 'derecha' && contenedorPos + contenedorWidth < window.innerWidth) {
+            contenedor.style.left = contenedorPos + velocidadMovimiento + 'px';
+        }
+    }
+
+    document.getElementById('flechaIzquierda').addEventListener('mousedown', function() {
+        moverContinuamente('izquierda');
+    });
+
+    document.getElementById('flechaDerecha').addEventListener('mousedown', function() {
+        moverContinuamente('derecha');
+    });
+
+    document.addEventListener('mouseup', function() {
+        detenerMovimiento();
+    });
+
+    let movimientoIntervalo;
+
+    function moverContinuamente(direccion) {
+        movimientoIntervalo = setInterval(function() {
+            moverContenedor(direccion);
+        }, 20);
+    }
+
+    function detenerMovimiento() {
+        clearInterval(movimientoIntervalo);
+    }
+
+    document.getElementById('barra-movimiento').addEventListener('mousedown', function(event) {
+        moverCursor(event);
+        document.addEventListener('mousemove', moverCursor);
+    });
+
+    document.addEventListener('mouseup', function() {
+        document.removeEventListener('mousemove', moverCursor);
+    });
+
+    function moverCursor(event) {
+        let barra = document.getElementById('barra-movimiento');
+        let nuevaPosicion = event.clientX - barra.offsetLeft;
+
+        if (nuevaPosicion >= 0 && nuevaPosicion <= barra.offsetWidth) {
+            cursor.style.left = nuevaPosicion + 'px';
+            let porcentaje = nuevaPosicion / barra.offsetWidth;
+            contenedor.style.left = (window.innerWidth * porcentaje - contenedor.offsetWidth / 2) + 'px';
+        }
+    }
+
+    function crearCirculo() {
+        if (caidaCirculos <= 0) return;
+
+        let circulo = document.createElement('div');
+        circulo.className = 'circulo';
+        circulo.style.left = Math.random() * window.innerWidth + 'px';
+        document.body.appendChild(circulo);
+
+        let caida = setInterval(function() {
+            let circuloPosicionTop = circulo.offsetTop + 5; // Velocidad de caída
+            circulo.style.top = circuloPosicionTop + 'px';
+
+            let contenedorRect = contenedor.getBoundingClientRect();
+            let circuloRect = circulo.getBoundingClientRect();
+
+            // Verificar si el círculo tocó el contenedor
+            if (circuloRect.bottom >= contenedorRect.top &&
+                circuloRect.left >= contenedorRect.left &&
+                circuloRect.right <= contenedorRect.right) {
+                clearInterval(caida);
+                document.body.removeChild(circulo);
+                puntos++;
+                puntuacion.textContent = 'Puntos: ' + puntos;
+            }
+
+            // Si el círculo cae fuera de la pantalla, eliminarlo
+            if (circuloPosicionTop > window.innerHeight) {
+                clearInterval(caida);
+                document.body.removeChild(circulo);
+            }
+        }, 20);
+
+        caidaCirculos--;
+    }
+</script>
+
+</body>
+</html>
